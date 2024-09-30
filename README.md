@@ -1,6 +1,9 @@
 # ExSTARS
 
+[![hex](https://img.shields.io/hexpm/v/ex_stars.svg)](https://hex.pm/packages/ex_stars)
 [![CI](https://github.com/tombo-works/ex_stars/actions/workflows/ci.yaml/badge.svg)](https://github.com/tombo-works/ex_stars/actions/workflows/ci.yaml)
+[![license](https://img.shields.io/hexpm/l/ex_stars.svg)](https://github.com/tombo-works/ex_stars/blob/main/REUSE.toml)
+[![REUSE](https://api.reuse.software/badge/github.com/tombo-works/ex_stars)](https://api.reuse.software/info/github.com/tombo-works/ex_stars)
 
 Elixir STARS library.
 
@@ -27,3 +30,9 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/ex_stars>.
 
+## License
+
+This project is licensed under the Apache-2.0 license.
+
+And this project follows the REUSE compliance.
+For more details, see the [REUSE SOFTWARE](https://reuse.software/).
