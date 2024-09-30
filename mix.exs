@@ -9,7 +9,8 @@ defmodule ExSTARS.MixProject do
       version: "0.1.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: dialyzer()
     ] ++ hex() ++ docs()
   end
 
@@ -24,7 +25,10 @@ defmodule ExSTARS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -47,6 +51,13 @@ defmodule ExSTARS.MixProject do
         main: "readme",
         extras: ["README.md"]
       ]
+    ]
+  end
+
+  defp dialyzer() do
+    [
+      plt_local_path: "priv/plts/ex_stars.plt",
+      plt_core_path: "priv/plts/core.plt"
     ]
   end
 end
