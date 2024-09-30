@@ -1,5 +1,6 @@
 # ExSTARS
 
+[![CI](https://github.com/tombo-works/ex_stars/actions/workflows/ci.yaml/badge.svg)](https://github.com/tombo-works/ex_stars/actions/workflows/ci.yaml)
 
 Elixir STARS library.
 

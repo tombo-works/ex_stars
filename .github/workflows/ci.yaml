@@ -1,0 +1,153 @@
+env:
+  OTP_VERSION: 27.0.1
+  ELIXIR_VERSION: 1.17.2
+
+# based https://github.com/erlef/setup-beam
+
+on: pull_request
+
+jobs:
+  build_deps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mix_env: [test, dev]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Retrieve cached dependencies
+        uses: actions/cache@v4
+        id: mix-cache
+        with:
+          path: |
+            ~/.mix/archives
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
+
+      - name: Build dependencies
+        if: ${{ steps.mix-cache.outputs.cache-hit != 'true' }}
+        run: mix do deps.get, deps.compile
+
+  code_styles:
+    needs: build_deps
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mix_env: [dev]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Retrieve cached dependencies
+        uses: actions/cache@v4
+        id: mix-cache
+        with:
+          path: |
+            ~/.mix/archives
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
+
+      - name: format
+        run: mix format --check-formatted
+
+      - name: credo
+        run: mix credo
+
+  test:
+    needs: build_deps
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mix_env: [test]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Retrieve cached dependencies
+        uses: actions/cache@v4
+        id: mix-cache
+        with:
+          path: |
+            ~/.mix/archives
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
+
+      - name: test
+        run: mix test --warnings-as-errors
+
+  dialyzer:
+    needs: build_deps
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mix_env: [dev]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Retrieve cached dependencies
+        uses: actions/cache@v4
+        id: mix-cache
+        with:
+          path: |
+            ~/.mix/archives
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
+
+      - name: Restore PLT cache
+        id: plt_cache
+        uses: actions/cache/restore@v4
+        with:
+          key: plt-${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            plt-${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
+          path: |
+            priv/plts
+
+      - name: Create PLTs
+        if: ${{ steps.plt_cache.outputs.cache-hit != 'true' }}
+        run: mix dialyzer --plt
+
+      - name: Save PLT cache
+        id: plt_cache_save
+        uses: actions/cache/save@v4
+        if: ${{ steps.plt_cache.outputs.cache-hit != 'true' }}
+        with:
+          key: plt-${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-${{ hashFiles('**/mix.lock') }}
+          path: |
+            priv/plts
+
+      - name: Run dialyzer
+        run: mix dialyzer --format github
