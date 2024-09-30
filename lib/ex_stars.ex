@@ -3,16 +3,25 @@ defmodule ExSTARS do
   Documentation for `ExSTARS`.
   """
 
-  @doc """
-  Hello world.
+  @type client :: GenServer.name()
 
-  ## Examples
+  @spec start_client(
+          name :: client(),
+          address :: :inet.socket_address() | :inet.hostname(),
+          port :: :inet.port_number()
+        ) :: :ok | {:error, :already_started}
+  def start_client(name \\ ExSTARS.Client, address, port) do
+    case DynamicSupervisor.start_child(
+           ExSTARS.Application.client_supervisor_name(),
+           {ExSTARS.Client, [name: name, address: address, port: port]}
+         ) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> {:error, :already_started}
+    end
+  end
 
-      iex> ExSTARS.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  @spec send(name :: GenServer.name(), message :: String.t()) :: :ok | {:error, :send_failed}
+  def send(name \\ ExSTARS.Client, message) do
+    ExSTARS.Client.send_with_name(name, message)
   end
 end

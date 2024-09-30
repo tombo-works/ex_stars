@@ -1,6 +1,13 @@
 # ExSTARS
 
-**TODO: Add description**
+
+Elixir STARS library.
+
+## STARS References
+
+- WEB: https://stars.kek.jp/
+  - [STARS tutorial](https://stars.kek.jp/lib/exe/fetch.php?media=stars_tutorial.pdf)
+    (PDF A5, fits screen or tablet, in Japanse, Ver.1.1 27 Mar 2013, 1.67MB)
 
 ## Installation
 
