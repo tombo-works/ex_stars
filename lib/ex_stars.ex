@@ -5,6 +5,15 @@ defmodule ExSTARS do
 
   @type client :: GenServer.name()
 
+  @doc """
+  Start STARS client.
+
+  ## Example
+
+      iex> ExSTARS.start_client({127, 0, 0, 1}, 6057)
+      :ok
+
+  """
   @spec start_client(
           name :: client(),
           address :: :inet.socket_address() | :inet.hostname(),
@@ -20,6 +29,17 @@ defmodule ExSTARS do
     end
   end
 
+  @doc """
+  Send a message.
+
+  ## Example
+
+      iex> ExSTARS.send("term1 stars")
+      :ok
+      iex> ExSTARS.send("System help")
+      :ok
+
+  """
   @spec send(name :: GenServer.name(), message :: String.t()) :: :ok | {:error, :send_failed}
   def send(name \\ ExSTARS.Client, message) do
     ExSTARS.Client.send_with_name(name, message)

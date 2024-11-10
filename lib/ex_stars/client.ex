@@ -60,7 +60,10 @@ defmodule ExSTARS.Client do
   end
 
   def handle_info({:tcp, _port, message}, state) do
-    IO.puts("#{String.trim_trailing(message)}")
+    Logger.info("""
+    STARS server:
+    #{String.trim_trailing(message)}
+    """)
 
     {:noreply, state}
   end

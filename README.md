@@ -30,6 +30,28 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/ex_stars>.
 
+## How to use
+
+```elixir
+iex(1)> ExSTARS.start_client({127, 0, 0, 1}, 6057)
+:ok
+
+11:25:56.166 [info] STARS server:
+6737
+
+iex(2)> ExSTARS.send("term1 stars")
+:ok
+
+11:25:59.456 [info] STARS server:
+System>term1 Ok:
+
+iex(3)> ExSTARS.send("System help")
+:ok
+
+11:26:02.905 [info] STARS server:
+System>term1 @help flgon flgoff loadaliases listaliases loadpermission loadreconnectablepermission listnodes getversion gettime hello disconnect
+```
+
 ## License
 
 This project is licensed under the Apache-2.0 license.
