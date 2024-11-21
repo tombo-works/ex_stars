@@ -5,6 +5,7 @@ defmodule ExSTARS.Application do
 
   def start(_type, _args) do
     children = [
+      {Registry, keys: :unique, name: ExSTARS.Registry},
       {DynamicSupervisor, name: client_supervisor_name(), strategy: :one_for_one}
     ]
 
