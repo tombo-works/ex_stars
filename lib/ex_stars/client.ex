@@ -96,17 +96,22 @@ defmodule ExSTARS.Client do
   def handle_call({:send, message}, _from, state) do
     %{transport: transport, socket: socket} = state
 
-    case transport.send(socket, message) do
-      :ok ->
-        {:reply, :ok, state}
+    if is_nil(socket) do
+      Logger.error(":send failed, the reason is not connected")
+      {:reply, {:error, :send_failed}, state, {:continue, :connect}}
+    else
+      case transport.send(socket, message) do
+        :ok ->
+          {:reply, :ok, state}
 
-      {:error, :closed = reason} ->
-        Logger.error(":send failed, the reason is #{inspect(reason)}")
-        {:reply, {:error, :send_failed}, state, {:continue, :connect}}
+        {:error, :closed = reason} ->
+          Logger.error(":send failed, the reason is #{inspect(reason)}")
+          {:reply, {:error, :send_failed}, state, {:continue, :connect}}
 
-      {:error, reason} ->
-        Logger.error(":send failed, the reason is #{inspect(reason)}")
-        {:reply, {:error, :send_failed}, state}
+        {:error, reason} ->
+          Logger.error(":send failed, the reason is #{inspect(reason)}")
+          {:reply, {:error, :send_failed}, state}
+      end
     end
   end
 
