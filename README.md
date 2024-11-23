@@ -7,11 +7,20 @@
 
 Elixir STARS library.
 
-## STARS References
+## How to use
 
-- WEB: https://stars.kek.jp/
-  - [STARS tutorial](https://stars.kek.jp/lib/exe/fetch.php?media=stars_tutorial.pdf)
-    (PDF A5, fits screen or tablet, in Japanse, Ver.1.1 27 Mar 2013, 1.67MB)
+```elixir
+iex(1)> ExSTARS.start_client("term1", "stars", {127, 0, 0, 1}, 6057)
+:ok
+
+09:03:53.215 [debug] 8414
+System>term1 Ok:
+
+iex(2)> ExSTARS.send("term1", "System help")
+:ok
+
+09:04:21.950 [debug] System>term1 @help flgon flgoff loadaliases listaliases loadpermission loadreconnectablepermission listnodes getversion gettime hello disconnect
+```
 
 ## Installation
 
@@ -30,27 +39,11 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/ex_stars>.
 
-## How to use
+## STARS References
 
-```elixir
-iex(1)> ExSTARS.start_client({127, 0, 0, 1}, 6057)
-:ok
-
-11:25:56.166 [info] STARS server:
-6737
-
-iex(2)> ExSTARS.send("term1 stars")
-:ok
-
-11:25:59.456 [info] STARS server:
-System>term1 Ok:
-
-iex(3)> ExSTARS.send("System help")
-:ok
-
-11:26:02.905 [info] STARS server:
-System>term1 @help flgon flgoff loadaliases listaliases loadpermission loadreconnectablepermission listnodes getversion gettime hello disconnect
-```
+- WEB: https://stars.kek.jp/
+  - [STARS tutorial](https://stars.kek.jp/lib/exe/fetch.php?media=stars_tutorial.pdf)
+    (PDF A5, fits screen or tablet, in Japanse, Ver.1.1 27 Mar 2013, 1.67MB)
 
 ## License
 
