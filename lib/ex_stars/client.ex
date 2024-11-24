@@ -38,6 +38,7 @@ defmodule ExSTARS.Client do
     address = Keyword.get(args, :address, {127, 0, 0, 1})
     port = Keyword.get(args, :port, 6057)
     callback_pid = Keyword.fetch!(args, :callback_pid)
+    reconnection_step_time = Keyword.get(args, :reconnection_step_time, 1000)
 
     {:ok,
      %{
@@ -48,7 +49,8 @@ defmodule ExSTARS.Client do
        port: port,
        callback_pid: callback_pid,
        socket: nil,
-       reconnection_attempts: 0
+       reconnection_attempts: 0,
+       reconnection_step_time: reconnection_step_time
      }, {:continue, :connect}}
   end
 
@@ -57,8 +59,7 @@ defmodule ExSTARS.Client do
       name: name,
       transport: transport,
       address: address,
-      port: port,
-      reconnection_attempts: reconnection_attempts
+      port: port
     } = state
 
     case connect(transport, address, port) do
@@ -71,8 +72,7 @@ defmodule ExSTARS.Client do
 
       {:error, reason} ->
         Logger.error(":connect failed, the reason is #{inspect(reason)}")
-        Process.send_after(self(), :reconnect, wait_time(reconnection_attempts))
-        {:noreply, state}
+        {:noreply, state, {:continue, :reconnect}}
     end
   end
 
@@ -83,46 +83,31 @@ defmodule ExSTARS.Client do
       :ok ->
         {:noreply, state}
 
-      {:error, :closed = reason} ->
-        Logger.error(":send failed, the reason is #{inspect(reason)}")
-        {:noreply, state, {:continue, :connect}}
-
       {:error, reason} ->
         Logger.error(":send failed, the reason is #{inspect(reason)}")
-        {:noreply, state}
+        :ok = transport.close(socket)
+        {:noreply, %{state | socket: nil}, {:continue, :reconnect}}
     end
   end
 
-  def handle_call({:send, message}, _from, state) do
-    %{transport: transport, socket: socket} = state
+  def handle_continue(:reconnect, state) do
+    %{
+      reconnection_attempts: reconnection_attempts,
+      reconnection_step_time: reconnection_step_time
+    } = state
 
-    if is_nil(socket) do
-      Logger.error(":send failed, the reason is not connected")
-      {:reply, {:error, :send_failed}, state, {:continue, :connect}}
-    else
-      case transport.send(socket, message) do
-        :ok ->
-          {:reply, :ok, state}
+    Process.send_after(
+      self(),
+      :reconnect,
+      wait_time(reconnection_attempts, reconnection_step_time)
+    )
 
-        {:error, :closed = reason} ->
-          Logger.error(":send failed, the reason is #{inspect(reason)}")
-          {:reply, {:error, :send_failed}, state, {:continue, :connect}}
-
-        {:error, reason} ->
-          Logger.error(":send failed, the reason is #{inspect(reason)}")
-          {:reply, {:error, :send_failed}, state}
-      end
-    end
-  end
-
-  def handle_call({:update_callback_pid, callback_pid}, _from, state) do
-    {:reply, :ok, %{state | callback_pid: callback_pid}}
+    {:noreply, state}
   end
 
   def handle_info(:reconnect, state) do
     %{reconnection_attempts: reconnection_attempts} = state
-    new_state = %{state | reconnection_attempts: reconnection_attempts + 1}
-    {:noreply, new_state, {:continue, :connect}}
+    {:noreply, %{state | reconnection_attempts: reconnection_attempts + 1}, {:continue, :connect}}
   end
 
   def handle_info({:tcp, _port, message}, state) do
@@ -137,13 +122,37 @@ defmodule ExSTARS.Client do
 
   def handle_info({:tcp_closed, _port}, state) do
     %{transport: transport, socket: socket} = state
-    Logger.error(":tcp_closed")
-    :ok = transport.close(socket)
-    {:noreply, %{state | socket: nil}, {:continue, :connect}}
+    Logger.error(":tcp_closed, the STARS server might be refusing the connection")
+    if not is_nil(socket), do: :ok = transport.close(socket)
+    # NOTE: Won't reconnect, because the STARS server might be refusing the connection
+    {:noreply, %{state | socket: nil}}
   end
 
-  defp connect(:gen_tcp, address, port) do
-    :gen_tcp.connect(
+  def handle_call({:send, message}, _from, state) do
+    %{transport: transport, socket: socket} = state
+
+    if is_nil(socket) do
+      Logger.error(":send failed, the reason is not connected")
+      {:reply, {:error, :send_failed}, state, {:continue, :reconnect}}
+    else
+      case transport.send(socket, message) do
+        :ok ->
+          {:reply, :ok, state}
+
+        {:error, reason} ->
+          Logger.error(":send failed, the reason is #{inspect(reason)}")
+          :ok = transport.close(socket)
+          {:reply, {:error, :send_failed}, %{state | socket: nil}, {:continue, :reconnect}}
+      end
+    end
+  end
+
+  def handle_call({:update_callback_pid, callback_pid}, _from, state) do
+    {:reply, :ok, %{state | callback_pid: callback_pid}}
+  end
+
+  defp connect(transport, address, port) do
+    transport.connect(
       address,
       port,
       [mode: :binary, packet: :raw, active: true],
@@ -151,8 +160,9 @@ defmodule ExSTARS.Client do
     )
   end
 
-  defp wait_time(reconnection_attempts, jitter_max \\ 1000) do
-    wait_time = min(:math.pow(2, reconnection_attempts), 16.0) * 1000
+  defp wait_time(reconnection_attempts, reconnection_step_time) do
+    wait_time = min(:math.pow(2, reconnection_attempts), 16.0) * reconnection_step_time
+    jitter_max = reconnection_step_time
     jitter = :rand.uniform(jitter_max)
     round(wait_time + jitter)
   end
