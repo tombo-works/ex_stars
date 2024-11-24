@@ -99,7 +99,7 @@ jobs:
             ${{ runner.os }}-otp-${{ env.OTP_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-mix_env-${{ matrix.mix_env }}-mix-
 
       - name: test
-        run: mix test --warnings-as-errors
+        run: mix test --warnings-as-errors --cover
 
   dialyzer:
     needs: build_deps
