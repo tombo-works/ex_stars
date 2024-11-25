@@ -10,7 +10,11 @@ defmodule ExSTARS.Client do
   end
 
   def send_with_name(name, message) do
-    GenServer.call(name(name), {:send, "#{message}\n"})
+    if String.ends_with?(message, "\n") do
+      GenServer.call(name(name), {:send, "#{message}"})
+    else
+      GenServer.call(name(name), {:send, "#{message}\n"})
+    end
   end
 
   def update_callback_pid(callback_pid) do
